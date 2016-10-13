@@ -108,6 +108,7 @@ class Patient extends HL7
 
     private function setSetId($xml)
     {
+        $array = [];
         if (!empty(trim($xml->__toString()))) {
             $array['PID.1'] = $xml->__toString();
         }
@@ -120,6 +121,7 @@ class Patient extends HL7
 
     private function setPatientId($xml)
     {
+        $array = [];
         if (!empty(trim($xml->__toString()))) {
             $pid['ID.1'] = $xml->__toString();
         }
