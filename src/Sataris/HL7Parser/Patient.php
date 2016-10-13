@@ -123,13 +123,13 @@ class Patient extends HL7
     {
         $array = [];
         if (!empty(trim($xml->__toString()))) {
-            $pid['ID.1'] = $xml->__toString();
+            $array['ID.1'] = $xml->__toString();
         }
         if (isset($xml->{'CX.1'})) {
-            $pid['CX.1'] = $xml->{'CX.1'}->__toString();
+            $array['CX.1'] = $xml->{'CX.1'}->__toString();
         }
 
-        return $pid;
+        return $array;
     }
 
     private function setPatientIdenfitiferList($xml)
