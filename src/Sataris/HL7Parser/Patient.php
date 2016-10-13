@@ -156,10 +156,12 @@ class Patient extends HL7
         if (!empty(trim($xml->__toString()))) {
             $array['XPN.' . $count] = $xml->__toString();
         }
-        foreach ($xml->{'XPN.1'}->children() as $child) {
-            if (!empty(trim($child->__toString()))) {
-                $array['XPN.1']['FN.' . $count] = $child->__toString();
-                $count++;
+        if (!empty($xml->{'XPN.1'})) {
+            foreach ($xml->{'XPN.1'}->children() as $child) {
+                if (!empty(trim($child->__toString()))) {
+                    $array['XPN.1']['FN.' . $count] = $child->__toString();
+                    $count++;
+                }
             }
         }
         return $array;
