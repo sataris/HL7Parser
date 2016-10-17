@@ -287,4 +287,9 @@ class Patient extends HL7
     {
         return $this->readSingleXML($xml, 'ID');
     }
+
+    public function getId()
+    {
+        return $this->patientId;
+    }
 }
