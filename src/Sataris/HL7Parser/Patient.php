@@ -63,13 +63,17 @@ class Patient extends HL7
 
     protected $vetMemberNumber;
 
-    public function __construct($xml, $type)
+    protected $type;
+
+    public function __construct($content, $type)
     {
+        $this->type = $type;
         switch ($type) {
             case "xml":
-                $this->parseXML($xml);
+                $this->parseXML($content);
                 break;
             default:
+                $this->parseORU($content);
                 break;
         }
     }
@@ -104,6 +108,41 @@ class Patient extends HL7
         $this->citizenship = $this->setCitizenship($xml->{'PID.26'});
         $this->vetMemberNumber = $this->setVMN($xml->{'PID.27'});
         $this->nationality = $this->setNationality($xml->{'PID.28'});
+    }
+
+    private function parseORU($content)
+    {
+        foreach ($content as $key => $value) {
+            $content[$key] = explode('^', $value);
+        }
+        $this->setId = $content[1];
+        $this->patientId = $content[2];
+        $this->patientIdList = $content[3];
+        $this->alternateId = $content[4];
+        $this->name = $content[5];
+        $this->motherMaidenName = $content[6];
+        $this->dob = $content[7];
+        $this->sex = $content[8];
+        $this->patientAlias = $content[9];
+        $this->race = $content[10];
+        $this->address = $content[11];
+        $this->countryCode = $content[12];
+        $this->homePhone = $content[13];
+        $this->workPhone = $content[14];
+        $this->primaryLanguage = $content[15];
+        $this->maritalStatus = $content[16];
+        $this->religion = $content[17];
+        $this->patientAccountNumber = $content[18];
+        $this->ssn = $content[19];
+        $this->dln = $content[20];
+        $this->motherIdentifier = $content[21];
+        $this->ethnicGroups = $content[22];
+        $this->birthPlace = $content[23];
+        $this->multipleBirthIndicator = $content[24];
+        $this->birthOrder = $content[25];
+        $this->citizenship = $content[26];
+        $this->vetMemberNumber = $content[27];
+        $this->nationality = $content[28];
     }
 
     private function setSetId($xml)
@@ -290,6 +329,19 @@ class Patient extends HL7
 
     public function getId()
     {
+        if ($this->type == 'oru') {
+            $array = array();
+            if (!empty($this->patientId[0])) {
+                $array = array_merge($this->patientId, $array);
+            }
+            if (!empty($this->patientIdList[0])) {
+                $array = array_merge($this->patientIdList, $array);
+            }
+            if (!empty($this->alternateId[0])) {
+                $array = array_merge($this->alternateId, $array);
+            }
+            return $array;
+        }
         return $this->patientId;
     }
 }

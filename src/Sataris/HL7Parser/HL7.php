@@ -14,36 +14,28 @@ class HL7
 
     public $patient;
 
-    public $results;
+    private $results;
 
-    public $header;
+    private $segments;
 
-    public function __construct($file_contents)
+    private $header;
+
+    private $type;
+
+    public function __construct($file_contents, $type)
     {
         if (empty($file_contents)) {
             throw new \Exception('File Content cannot be empty');
         }
-        $this->file_content = $file_contents;
-    }
-
-    public function parseAsCsv()
-    {
-    }
-
-    protected function parseAsOru()
-    {
-    }
-
-    /**
-     * This function will take our xml file and parse it for the various values required as an ordinary php array.
-     * @return [type] [description]
-     */
-    public function parseAsXml()
-    {
-        $this->file_content = simplexml_load_string($this->file_content);
-        $this->setHeaderXML();
-        $this->setPatientXML();
-        $this->setResultXML();
+        $this->type = $type;
+        if ($this->type == 'xml') {
+             $this->file_content = simplexml_load_string($file_contents);
+        } else {
+            $this->file_content = $file_contents;
+        }
+        $this->setHeader();
+        $this->setPatient();
+        $this->setResult();
     }
 
     public function getPatient()
@@ -54,32 +46,92 @@ class HL7
         return $this->patient;
     }
 
-    private function setPatientXML()
+    private function setPatient()
     {
-        $patient = $this->file_content->xpath('//PID');
-        if (empty($patient)) {
-            throw new \Exception('This XML does not conform to the ORU standard');
+        switch ($this->type) {
+            case 'oru':
+                $patient = array_slice($this->segments, 12, 28);
+                $patient =  array_combine(range(1, count($patient)), array_values($patient));
+                $this->patient = new Patient($patient, 'oru');
+                break;
+            case 'xml':
+                $patient = $this->file_content->xpath('//PID');
+                if (empty($patient)) {
+                    throw new \Exception('This XML does not conform to the ORU standard');
+                }
+                $this->patient = new Patient($patient[0], 'xml');
+                break;
         }
-        $this->patient = new Patient($patient[0], 'xml');
     }
 
-    private function setHeaderXML()
+    private function setHeader()
     {
-        $results = $this->file_content->xpath('//MSH');
+        switch ($this->type) {
+            case 'oru':
+                if (substr($this->file_content, 0, 3) != 'MSH') {
+                    throw new \Exception('This is not a valid HL7');
+                }
+                $field_delimiter = substr($this->file_content, 3, 1);
+                $this->segments = explode($field_delimiter, $this->file_content);
+                $header = array_slice($this->segments, 0, 25);
+                $this->header = array_combine(range(1, count($header)), array_values($header));
+                break;
+            case 'xml':
+                $results = $this->file_content->xpath('//MSH');
 
-        if (empty($results)) {
-            throw new \Exception('This XML does not conform to the ORU standard');
+                if (empty($results)) {
+                    throw new \Exception('This XML does not conform to the ORU standard');
+                }
+                $this->header = $results[0];
+                break;
         }
-        $this->header = $results[0];
     }
 
-    private function setResultXML()
+    private function setResult()
     {
-        $results = $this->file_content->xpath('//OBX');
-        if (empty($results)) {
-            throw new \Exception('This XML does not conform to the ORU standard');
+        $resultArray = array();
+        switch ($this->type) {
+            case 'oru':
+                $results= explode('OBX', $this->file_content);
+                if (empty($results)) {
+                    throw new \Exception('This ORU does not conform to the ORU standard');
+                }
+
+                unset($results[0]);
+                foreach ($results as $key => $value) {
+                    $results[$key] = explode('|', $value);
+                }
+                foreach ($results as $result) {
+                    $testName = explode("^", $result[3]);
+                    $array['resultMarker'] = $testName[0];
+                    $array['labMarkerCode'] = $testName[0];
+                    $array['testName'] = (!empty($testName[1]) ? $testName[1] : $testName[0]);
+                    $array['testValue'] =  $result[5];
+                    $array['testUnit'] = $result[6];
+                    $array['testReference'] = explode("^", $result[7]);
+                    $array['testAbnormal'] = $result[8];
+                    $resultArray[] = $array;
+                }
+                break;
+            case 'xml':
+                $results = $this->file_content->xpath('//OBX');
+                if (empty($results)) {
+                    throw new \Exception('This XML does not conform to the ORU standard');
+                }
+                foreach ($results as $result) {
+                    $array['resultMarker'] = $result->{'OBX.3'}->{'CE.1'}->__toString();
+                    $array['labMarkerCode'] = $result->{'OBX.3'}->{'CE.1'}->__toString();
+                    $array['testName'] = $result->{'OBX.3'}->{'CE.2'}->__toString();
+                    $array['testValue'] =  $result->{'OBX.5'}->__toString();
+                    $array['testUnit'] = $result->{'OBX.6'}->{'CE.1'}->__toString();
+                    $array['testReference'] =explode("^", $result->{'OBX.7'}->__toString());
+                    $array['testAbnormal'] = $result->{'OBX.8'}->__toString();
+                    $resultArray[] = $array;
+                }
+                break;
         }
-        $this->results = $results;
+
+        $this->results = $resultArray;
     }
 
     protected function readSingleXML($xml, $key)
@@ -231,8 +283,17 @@ class HL7
 
     public function getHeaderCode()
     {
-        $header = $this->header->{'MSH.10'}->__toString();
-        $header = explode("_", $header);
-        return $header[1];
+        if ($this->type == 'xml') {
+            $header = $this->header->{'MSH.10'}->__toString();
+            $header = explode("_", $header);
+            return $header[1];
+        } else {
+            return $this->header[10];
+        }
+    }
+
+    public function getResults()
+    {
+        return $this->results;
     }
 }
