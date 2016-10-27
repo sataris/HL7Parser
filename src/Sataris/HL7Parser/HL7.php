@@ -115,7 +115,7 @@ class HL7
                 break;
             case 'xml':
                 $results = $this->file_content->xpath('//OBX');
-                if (empty($results)) {
+                if (empty($results) || empty($result->{'OBX.3'})) {
                     throw new \Exception('This XML does not conform to the ORU standard');
                 }
                 foreach ($results as $result) {
