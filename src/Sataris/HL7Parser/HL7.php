@@ -36,6 +36,7 @@ class HL7
         $this->setHeader();
         $this->setPatient();
         $this->setResult();
+        dd('3');
     }
 
     public function getPatient()
@@ -115,18 +116,18 @@ class HL7
                 break;
             case 'xml':
                 $results = $this->file_content->xpath('//OBX');
-                if (empty($results) || empty($result->{'OBX.3'})) {
+                if (empty($results)) {
                     throw new \Exception('This XML does not conform to the ORU standard');
                 }
                 foreach ($results as $result) {
-                    $array['resultMarker'] = $result->{'OBX.3'}->{'CE.1'}->__toString();
-                    $array['labMarkerCode'] = $result->{'OBX.3'}->{'CE.1'}->__toString();
-                    $array['testName'] = $result->{'OBX.3'}->{'CE.2'}->__toString();
-                    $array['testValue'] =  $result->{'OBX.5'}->__toString();
-                    $array['testUnit'] = $result->{'OBX.6'}->{'CE.1'}->__toString();
-                    $array['testReference'] =explode("^", $result->{'OBX.7'}->__toString());
-                    $array['testAbnormal'] = $result->{'OBX.8'}->__toString();
-                    $resultArray[] = $array;
+                        $array['resultMarker'] = $result->{'OBX.3'}->{'CE.1'}->__toString();
+                        $array['labMarkerCode'] = $result->{'OBX.3'}->{'CE.1'}->__toString();
+                        $array['testName'] = $result->{'OBX.3'}->{'CE.2'}->__toString();
+                        $array['testValue'] =  $result->{'OBX.5'}->__toString();
+                        $array['testUnit'] = $result->{'OBX.6'}->{'CE.1'}->__toString();
+                        $array['testReference'] =explode("^", $result->{'OBX.7'}->__toString());
+                        $array['testAbnormal'] = $result->{'OBX.8'}->__toString();
+                        $resultArray[] = $array;
                 }
                 break;
         }
