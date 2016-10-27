@@ -36,7 +36,6 @@ class HL7
         $this->setHeader();
         $this->setPatient();
         $this->setResult();
-        dd('3');
     }
 
     public function getPatient()
