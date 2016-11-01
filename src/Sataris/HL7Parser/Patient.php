@@ -344,4 +344,17 @@ class Patient extends HL7
         }
         return $this->patientId;
     }
+
+    public function getName()
+    {
+        if ($this->type == 'oru') {
+            return $this->name;
+        } else {
+            $fullname = '';
+            foreach ($this->name['XPN.1'] as $name) {
+                $fullname = $fullname ." " . $name;
+            }
+            return trim($fullname);
+        }
+    }
 }
