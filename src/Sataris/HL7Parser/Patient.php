@@ -347,14 +347,16 @@ class Patient extends HL7
 
     public function getName()
     {
+        $fullname = '';
         if ($this->type == 'oru') {
-            return $this->name;
+            foreach ($this->name as $name) {
+                $fullname = $fullname . ' ' . $name;
+            }
         } else {
-            $fullname = '';
             foreach ($this->name['XPN.1'] as $name) {
                 $fullname = $fullname ." " . $name;
             }
-            return trim($fullname);
         }
+        return trim($fullname);
     }
 }
