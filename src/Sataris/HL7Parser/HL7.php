@@ -119,6 +119,7 @@ class HL7
                     throw new \Exception('This XML does not conform to the ORU standard');
                 }
                 foreach ($results as $result) {
+                    try {
                         $array['resultMarker'] = $result->{'OBX.3'}->{'CE.1'}->__toString();
                         $array['labMarkerCode'] = $result->{'OBX.3'}->{'CE.1'}->__toString();
                         $array['testName'] = $result->{'OBX.3'}->{'CE.2'}->__toString();
@@ -127,6 +128,9 @@ class HL7
                         $array['testReference'] =explode("^", $result->{'OBX.7'}->__toString());
                         $array['testAbnormal'] = $result->{'OBX.8'}->__toString();
                         $resultArray[] = $array;
+                    } catch (\Exception $e) {
+                        throw new \Exception('This XML does not conform to the ORU standard');
+                    }
                 }
                 break;
         }
