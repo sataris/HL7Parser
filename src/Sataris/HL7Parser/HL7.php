@@ -308,7 +308,11 @@ class HL7
         if ($this->type == 'xml') {
             $header = $this->header->{'MSH.10'}->__toString();
             $header = explode("_", $header);
-            return $header[1];
+            if (!empty($header[1])) {
+                return $header[1];
+            } else {
+                return false;
+            }
         } else {
             return $this->header[10];
         }
