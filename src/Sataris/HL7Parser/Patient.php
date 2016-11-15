@@ -353,8 +353,10 @@ class Patient extends HL7
                 $fullname = $fullname . ' ' . $name;
             }
         } else {
-            foreach ($this->name['XPN.1'] as $name) {
-                $fullname = $fullname ." " . $name;
+            if (!empty($this->name['XPN.1'])) {
+                foreach ($this->name['XPN.1'] as $name) {
+                    $fullname = $fullname ." " . $name;
+                }
             }
         }
         return trim($fullname);
