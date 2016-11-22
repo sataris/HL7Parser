@@ -25,7 +25,7 @@ class HL7
     public function __construct($file_contents, $type)
     {
         if (empty($file_contents)) {
-            throw new Exception('File Content cannot be empty');
+            throw new \Exception('File Content cannot be empty');
         }
         $this->type = $type;
         if ($this->type == 'xml') {
@@ -41,7 +41,7 @@ class HL7
     public function getPatient()
     {
         if (empty($this->patient)) {
-            throw new Exception('You must first parse the XML before returning objects');
+            throw new \Exception('You must first parse the XML before returning objects');
         }
         return $this->patient;
     }
@@ -57,7 +57,7 @@ class HL7
             case 'xml':
                 $patient = $this->file_content->xpath('//PID');
                 if (empty($patient)) {
-                    throw new Exception('This XML does not conform to the ORU standard');
+                    throw new \Exception('This XML does not conform to the ORU standard');
                 }
                 $this->patient = new Patient($patient[0], 'xml');
                 break;
@@ -69,7 +69,7 @@ class HL7
         switch ($this->type) {
             case 'oru':
                 if (substr($this->file_content, 0, 3) != 'MSH') {
-                    throw new Exception('This is not a valid HL7');
+                    throw new \Exception('This is not a valid HL7');
                 }
                 $field_delimiter = substr($this->file_content, 3, 1);
                 $this->segments = explode($field_delimiter, $this->file_content);
@@ -80,7 +80,7 @@ class HL7
                 $results = $this->file_content->xpath('//MSH');
 
                 if (empty($results)) {
-                    throw new Exception('This XML does not conform to the ORU standard');
+                    throw new \Exception('This XML does not conform to the ORU standard');
                 }
                 $this->header = $results[0];
                 break;
@@ -94,7 +94,7 @@ class HL7
             case 'oru':
                 $results= explode('OBX', $this->file_content);
                 if (empty($results)) {
-                    throw new Exception('This ORU does not conform to the ORU standard');
+                    throw new \Exception('This ORU does not conform to the ORU standard');
                 }
 
                 unset($results[0]);
@@ -116,7 +116,7 @@ class HL7
             case 'xml':
                 $results = $this->file_content->xpath('//OBX');
                 if (empty($results)) {
-                    throw new Exception('This XML does not conform to the ORU standard');
+                    throw new \Exception('This XML does not conform to the ORU standard');
                 }
                 foreach ($results as $result) {
                     try {
@@ -147,7 +147,7 @@ class HL7
                             return false;
                         }
                     } catch (Exception $e) {
-                        throw new Exception('This XML does not conform to the ORU standard');
+                        throw new \Exception('This XML does not conform to the ORU standard');
                     }
                 }
                 break;
