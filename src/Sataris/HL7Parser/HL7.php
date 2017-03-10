@@ -92,25 +92,47 @@ class HL7
         $resultArray = array();
         switch ($this->type) {
             case 'oru':
-                $results= explode('OBX', $this->file_content);
+                $results= explode('OBR', $this->file_content);
                 if (empty($results)) {
                     throw new \Exception('This ORU does not conform to the ORU standard');
                 }
-
                 unset($results[0]);
                 foreach ($results as $key => $value) {
-                    $results[$key] = explode('|', $value);
+                    $temparray = preg_split('/\n|\r\n?/', $value);
+                    $temparray = $this->filterArray($temparray);
+                    foreach ($temparray as $tmp => $tmpvalue) {
+                        $temparray[$tmp] = explode("|", $tmpvalue);
+                    }
+                    $results[$key] = $temparray;
                 }
                 foreach ($results as $result) {
-                    $testName = explode("^", $result[3]);
-                    $array['resultMarker'] = $testName[0];
-                    $array['labMarkerCode'] = $testName[0];
-                    $array['testName'] = (!empty($testName[1]) ? $testName[1] : $testName[0]);
-                    $array['testValue'] =  $result[5];
-                    $array['testUnit'] = $result[6];
-                    $array['testReference'] = explode("^", $result[7]);
-                    $array['testAbnormal'] = $result[8];
-                    $resultArray[] = $array;
+                    $count = 0;
+                    $testProfile = null;
+                    foreach ($result as $r) {
+                        if ($count == 0) {
+                            $testProfile = explode("^", $r[4]);
+                            $testProfile = $this->filterArray($testProfile);
+                            $testProfile = implode(" ", $testProfile);
+                            $count++;
+                            continue;
+                        }
+                        $testName = explode("^", $r[3]);
+                        $testName = $this->filterArray($testName);
+                        $testName = array_values($testName);
+                        
+                        $array['resultMarker'] = trim($testName[0]);
+                        $array['labMarkerCode'] = trim($testName[0]);
+                        $array['testName'] = (!empty($testName[1]) ? trim($testName[1]) : trim($testName[0]));
+                        
+                        $array['testValue'] =  $r[5];
+                        $array['testUnit'] = $r[6];
+                        $referenceRange = $this->filterArray(explode("^", $r[7]));
+
+                        $array['testReference'] = (!empty($referenceRange)? implode(" ", $referenceRange) : "");
+                        $array['testAbnormal'] = $r[8];
+                        $array['profile_name'] = $testProfile;
+                        $resultArray[] = $array;
+                    }
                 }
                 break;
             case 'xml':
@@ -321,5 +343,16 @@ class HL7
     public function getResults()
     {
         return $this->results;
+    }
+
+    private function filterArray($array)
+    {
+        $array = array_filter($array, function ($var) {
+            return !empty($var);
+        } );
+        foreach ($array as $key => $value) {
+            $array[$key] = trim($value);
+        }
+        return $array;
     }
 }
