@@ -110,41 +110,6 @@ class Patient extends HL7
         $this->nationality = $this->setNationality($xml->{'PID.28'});
     }
 
-    private function parseORU($content)
-    {
-        foreach ($content as $key => $value) {
-            $content[$key] = explode('^', $value);
-        }
-        $this->setId = $content[1];
-        $this->patientId = $content[2];
-        $this->patientIdList = $content[3];
-        $this->alternateId = $content[4];
-        $this->name = $content[5];
-        $this->motherMaidenName = $content[6];
-        $this->dob = $content[7];
-        $this->sex = $content[8];
-        $this->patientAlias = $content[9];
-        $this->race = $content[10];
-        $this->address = $content[11];
-        $this->countryCode = $content[12];
-        $this->homePhone = $content[13];
-        $this->workPhone = $content[14];
-        $this->primaryLanguage = $content[15];
-        $this->maritalStatus = $content[16];
-        $this->religion = $content[17];
-        $this->patientAccountNumber = $content[18];
-        $this->ssn = $content[19];
-        $this->dln = $content[20];
-        $this->motherIdentifier = $content[21];
-        $this->ethnicGroups = $content[22];
-        $this->birthPlace = $content[23];
-        $this->multipleBirthIndicator = $content[24];
-        $this->birthOrder = $content[25];
-        $this->citizenship = $content[26];
-        $this->vetMemberNumber = $content[27];
-        $this->nationality = $content[28];
-    }
-
     private function setSetId($xml)
     {
         $array = [];
@@ -154,7 +119,7 @@ class Patient extends HL7
         if (isset($xml->{'SI'})) {
             $array['SI.1'] = $xml->{'SI'}->__toString();
         }
-            
+
         return $array;
     }
 
@@ -233,7 +198,7 @@ class Patient extends HL7
 
     private function setPatientCC($xml)
     {
-       
+
         return $this->readSingleXML($xml, 'IS');
     }
 
@@ -249,7 +214,7 @@ class Patient extends HL7
 
     private function setPrimaryLanguage($xml)
     {
-         return $this->readSingleXML($xml, 'CE');
+        return $this->readSingleXML($xml, 'CE');
     }
 
     private function setMaritalStatus($xml)
@@ -317,14 +282,39 @@ class Patient extends HL7
         return $this->readSingleXML($xml, 'CE');
     }
 
-    private function setDeathDateTime($xml)
+    private function parseORU($content)
     {
-        return $this->readSingleXML($xml, 'TS');
-    }
-
-    private function setDeathIndicator($xml)
-    {
-        return $this->readSingleXML($xml, 'ID');
+        foreach ($content as $key => $value) {
+            $content[$key] = explode('^', $value);
+        }
+        $this->setId = $content[1];
+        $this->patientId = $content[2];
+        $this->patientIdList = $content[3];
+        $this->alternateId = $content[4];
+        $this->name = $content[5];
+        $this->motherMaidenName = $content[6];
+        $this->dob = $content[7];
+        $this->sex = $content[8];
+        $this->patientAlias = $content[9];
+        $this->race = $content[10];
+        $this->address = $content[11];
+        $this->countryCode = $content[12];
+        $this->homePhone = $content[13];
+        $this->workPhone = $content[14];
+        $this->primaryLanguage = $content[15];
+        $this->maritalStatus = $content[16];
+        $this->religion = $content[17];
+        $this->patientAccountNumber = $content[18];
+        $this->ssn = $content[19];
+        $this->dln = $content[20];
+        $this->motherIdentifier = $content[21];
+        $this->ethnicGroups = $content[22];
+        $this->birthPlace = $content[23];
+        $this->multipleBirthIndicator = $content[24];
+        $this->birthOrder = $content[25];
+        $this->citizenship = $content[26];
+        $this->vetMemberNumber = $content[27];
+        $this->nationality = $content[28];
     }
 
     public function getId()
@@ -355,10 +345,20 @@ class Patient extends HL7
         } else {
             if (!empty($this->name['XPN.1'])) {
                 foreach ($this->name['XPN.1'] as $name) {
-                    $fullname = $fullname ." " . $name;
+                    $fullname = $fullname . " " . $name;
                 }
             }
         }
         return trim($fullname);
+    }
+
+    private function setDeathDateTime($xml)
+    {
+        return $this->readSingleXML($xml, 'TS');
+    }
+
+    private function setDeathIndicator($xml)
+    {
+        return $this->readSingleXML($xml, 'ID');
     }
 }

@@ -10,10 +10,8 @@ use Sataris\HL7Parser\Patient;
 class HL7
 {
 
-    private $file_content;
-
     public $patient;
-
+    private $file_content;
     private $results;
 
     private $segments;
@@ -29,39 +27,13 @@ class HL7
         }
         $this->type = $type;
         if ($this->type == 'xml') {
-             $this->file_content = simplexml_load_string($file_contents);
+            $this->file_content = simplexml_load_string($file_contents);
         } else {
             $this->file_content = $file_contents;
         }
         $this->setHeader();
         $this->setPatient();
         $this->setResult();
-    }
-
-    public function getPatient()
-    {
-        if (empty($this->patient)) {
-            throw new \Exception('You must first parse the XML before returning objects');
-        }
-        return $this->patient;
-    }
-
-    private function setPatient()
-    {
-        switch ($this->type) {
-            case 'oru':
-                $patient = array_slice($this->segments, 12, 28);
-                $patient =  array_combine(range(1, count($patient)), array_values($patient));
-                $this->patient = new Patient($patient, 'oru');
-                break;
-            case 'xml':
-                $patient = $this->file_content->xpath('//PID');
-                if (empty($patient)) {
-                    throw new \Exception('This XML does not conform to the ORU standard');
-                }
-                $this->patient = new Patient($patient[0], 'xml');
-                break;
-        }
     }
 
     private function setHeader()
@@ -87,12 +59,30 @@ class HL7
         }
     }
 
+    private function setPatient()
+    {
+        switch ($this->type) {
+            case 'oru':
+                $patient = array_slice($this->segments, 12, 28);
+                $patient = array_combine(range(1, count($patient)), array_values($patient));
+                $this->patient = new Patient($patient, 'oru');
+                break;
+            case 'xml':
+                $patient = $this->file_content->xpath('//PID');
+                if (empty($patient)) {
+                    throw new \Exception('This XML does not conform to the ORU standard');
+                }
+                $this->patient = new Patient($patient[0], 'xml');
+                break;
+        }
+    }
+
     private function setResult()
     {
         $resultArray = array();
         switch ($this->type) {
             case 'oru':
-                $results= explode('OBR', $this->file_content);
+                $results = explode('OBR', $this->file_content);
                 if (empty($results)) {
                     throw new \Exception('This ORU does not conform to the ORU standard');
                 }
@@ -119,16 +109,16 @@ class HL7
                         $testName = explode("^", $r[3]);
                         $testName = $this->filterArray($testName);
                         $testName = array_values($testName);
-                        
+
                         $array['resultMarker'] = trim($testName[0]);
                         $array['labMarkerCode'] = trim($testName[0]);
                         $array['testName'] = (!empty($testName[1]) ? trim($testName[1]) : trim($testName[0]));
-                        
-                        $array['testValue'] =  $r[5];
+
+                        $array['testValue'] = $r[5];
                         $array['testUnit'] = $r[6];
                         $referenceRange = $this->filterArray(explode("^", $r[7]));
 
-                        $array['testReference'] = (!empty($referenceRange)? implode(" ", $referenceRange) : "");
+                        $array['testReference'] = (!empty($referenceRange) ? implode(" ", $referenceRange) : "");
                         $array['testAbnormal'] = $r[8];
                         $array['profile_name'] = $testProfile;
                         $resultArray[] = $array;
@@ -152,13 +142,13 @@ class HL7
                             $array['testName'] = $result->{'OBX.3'}->{'CE.2'}->__toString();
                         }
                         if (!empty($result->{'OBX.5'})) {
-                            $array['testValue'] =  $result->{'OBX.5'}->__toString();
+                            $array['testValue'] = $result->{'OBX.5'}->__toString();
                         }
                         if (!empty($result->{'OBX.6'}->{'CE.1'})) {
                             $array['testUnit'] = $result->{'OBX.6'}->{'CE.1'}->__toString();
                         }
                         if (!empty($result->{'OBX.7'})) {
-                            $array['testReference'] =explode("^", $result->{'OBX.7'}->__toString());
+                            $array['testReference'] = explode("^", $result->{'OBX.7'}->__toString());
                         }
                         if (!empty($result->{'OBX.8'})) {
                             $array['testAbnormal'] = $result->{'OBX.8'}->__toString();
@@ -178,50 +168,31 @@ class HL7
         $this->results = $resultArray;
     }
 
-    protected function readSingleXML($xml, $key)
+    private function filterArray($array)
     {
-        $data = null;
-
-        if (!empty(trim($xml->__toString()))) {
-            $data[$key . '.1'] = $xml->__toString();
-        }
-        $count = 1;
-        if (!empty($xml) && !empty($xml->children())) {
-            foreach ($xml->children() as $child) {
-                if (!empty($child->__toString())) {
-                    $data[$key.'.'.$count] = $child->__toString();
-                    $count++;
-                }
-            }
-        }
-        return $data;
-    }
-
-    protected function readRepeatingXML($xml, $key)
-    {
-        $array = [];
-        $count = 2;
-
-        if (!empty(trim($xml->__toString()))) {
-            $array[$key . '.1'] = $xml->__toString();
-        }
-        if (!empty($xml)) {
-            foreach ($xml->children() as $child) {
-                if (!empty(trim($child->__toString()))) {
-                    $array[$key .'.' . $count] = $child->__toString();
-                    $count++;
-                }
-            }
+        $array = array_filter($array, function ($var) {
+            return !empty($var);
+        });
+        foreach ($array as $key => $value) {
+            $array[$key] = trim($value);
         }
         return $array;
     }
 
+    public function getPatient()
+    {
+        if (empty($this->patient)) {
+            throw new \Exception('You must first parse the XML before returning objects');
+        }
+        return $this->patient;
+    }
+
     public function convertXMLtoArray($xml, $get_attributes = 1, $priority = 'tag')
     {
-        
+
         $contents = "";
         if (!function_exists('xml_parser_create')) {
-            return array ();
+            return array();
         }
         $parser = xml_parser_create('');
         xml_parser_set_option($parser, XML_OPTION_TARGET_ENCODING, "UTF-8");
@@ -232,17 +203,17 @@ class HL7
         if (!$xml_values) {
             return; //Hmm...
         }
-        $xml_array = array ();
-        $parents = array ();
-        $opened_tags = array ();
-        $arr = array ();
-        $current = & $xml_array;
-        $repeated_tag_index = array ();
+        $xml_array = array();
+        $parents = array();
+        $opened_tags = array();
+        $arr = array();
+        $current = &$xml_array;
+        $repeated_tag_index = array();
         foreach ($xml_values as $data) {
             unset($attributes, $value);
             extract($data);
-            $result = array ();
-            $attributes_data = array ();
+            $result = array();
+            $attributes_data = array();
             if (isset($value)) {
                 if ($priority == 'tag') {
                     $result = $value;
@@ -260,22 +231,22 @@ class HL7
                 }
             }
             if ($type == "open") {
-                $parent[$level -1] = & $current;
+                $parent[$level - 1] = &$current;
                 if (!is_array($current) or (!in_array($tag, array_keys($current)))) {
                     $current[$tag] = $result;
                     if ($attributes_data) {
                         $current[$tag . '_attr'] = $attributes_data;
                     }
                     $repeated_tag_index[$tag . '_' . $level] = 1;
-                    $current = & $current[$tag];
+                    $current = &$current[$tag];
                 } else {
                     if (isset($current[$tag][0])) {
                         $current[$tag][$repeated_tag_index[$tag . '_' . $level]] = $result;
                         $repeated_tag_index[$tag . '_' . $level]++;
                     } else {
-                        $current[$tag] = array (
-                        $current[$tag],
-                        $result
+                        $current[$tag] = array(
+                            $current[$tag],
+                            $result
                         );
                         $repeated_tag_index[$tag . '_' . $level] = 2;
                         if (isset($current[$tag . '_attr'])) {
@@ -284,7 +255,7 @@ class HL7
                         }
                     }
                     $last_item_index = $repeated_tag_index[$tag . '_' . $level] - 1;
-                    $current = & $current[$tag][$last_item_index];
+                    $current = &$current[$tag][$last_item_index];
                 }
             } elseif ($type == "complete") {
                 if (!isset($current[$tag])) {
@@ -301,9 +272,9 @@ class HL7
                         }
                         $repeated_tag_index[$tag . '_' . $level]++;
                     } else {
-                        $current[$tag] = array (
-                        $current[$tag],
-                        $result
+                        $current[$tag] = array(
+                            $current[$tag],
+                            $result
                         );
                         $repeated_tag_index[$tag . '_' . $level] = 1;
                         if ($priority == 'tag' and $get_attributes) {
@@ -319,7 +290,7 @@ class HL7
                     }
                 }
             } elseif ($type == 'close') {
-                $current = & $parent[$level -1];
+                $current = &$parent[$level - 1];
             }
         }
         return ($xml_array);
@@ -345,13 +316,40 @@ class HL7
         return $this->results;
     }
 
-    private function filterArray($array)
+    protected function readSingleXML($xml, $key)
     {
-        $array = array_filter($array, function ($var) {
-            return !empty($var);
-        } );
-        foreach ($array as $key => $value) {
-            $array[$key] = trim($value);
+        $data = null;
+
+        if (!empty(trim($xml->__toString()))) {
+            $data[$key . '.1'] = $xml->__toString();
+        }
+        $count = 1;
+        if (!empty($xml) && !empty($xml->children())) {
+            foreach ($xml->children() as $child) {
+                if (!empty($child->__toString())) {
+                    $data[$key . '.' . $count] = $child->__toString();
+                    $count++;
+                }
+            }
+        }
+        return $data;
+    }
+
+    protected function readRepeatingXML($xml, $key)
+    {
+        $array = [];
+        $count = 2;
+
+        if (!empty(trim($xml->__toString()))) {
+            $array[$key . '.1'] = $xml->__toString();
+        }
+        if (!empty($xml)) {
+            foreach ($xml->children() as $child) {
+                if (!empty(trim($child->__toString()))) {
+                    $array[$key . '.' . $count] = $child->__toString();
+                    $count++;
+                }
+            }
         }
         return $array;
     }
