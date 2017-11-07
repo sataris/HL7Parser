@@ -9,8 +9,12 @@ use Sataris\HL7Parser\Patient;
  */
 class HL7
 {
-
     public $patient;
+    private $fieldSeperator = "|";
+    private $componentSeperator = "^";
+    private $fieldRepeater = "~";
+    private $escapeCharacter = "\\";
+    private $subComponentSeperator = "&";
     private $file_content;
     private $results;
 
@@ -30,6 +34,7 @@ class HL7
             $this->file_content = simplexml_load_string($file_contents);
         } else {
             $this->file_content = $file_contents;
+
         }
         $this->setHeader();
         $this->setPatient();
@@ -43,8 +48,8 @@ class HL7
                 if (substr($this->file_content, 0, 3) != 'MSH') {
                     throw new \Exception('This is not a valid HL7');
                 }
-                $field_delimiter = substr($this->file_content, 3, 1);
-                $this->segments = explode($field_delimiter, $this->file_content);
+                $this->setSeperators();
+                $this->segments = explode($this->fieldSeperator, $this->file_content);
                 $header = array_slice($this->segments, 0, 25);
                 $this->header = array_combine(range(1, count($header)), array_values($header));
                 break;
@@ -56,6 +61,30 @@ class HL7
                 }
                 $this->header = $results[0];
                 break;
+        }
+    }
+
+    private function setSeperators()
+    {
+        $lines = explode(PHP_EOL, $this->file_content);
+        $this->fieldSeperator = substr($lines[0], 3, 1);
+        $line = explode($this->fieldSeperator, $lines[0]);
+        $line = str_split($line[1]);
+        foreach ($line as $key => $value) {
+            switch ($key) {
+                case 0:
+                    $this->componentSeperator = $value;
+                    break;
+                case 1:
+                    $this->fieldRepeater = $value;
+                    break;
+                case 2:
+                    $this->escapeCharacter = $value;
+                    break;
+                case 3:
+                    $this->subComponentSeperator = $value;
+                    break;
+            }
         }
     }
 
@@ -91,7 +120,7 @@ class HL7
                     $temparray = preg_split('/\n|\r\n?/', $value);
                     $temparray = $this->filterArray($temparray);
                     foreach ($temparray as $tmp => $tmpvalue) {
-                        $temparray[$tmp] = explode("|", $tmpvalue);
+                        $temparray[$tmp] = explode($this->fieldSeperator, $tmpvalue);
                     }
                     $results[$key] = $temparray;
                 }
@@ -99,17 +128,17 @@ class HL7
                     $count = 0;
                     $testProfile = null;
                     foreach ($result as $r) {
+
                         if ($count == 0) {
-                            $testProfile = explode("^", $r[4]);
+                            $testProfile = explode($this->componentSeperator, $r[4]);
                             $testProfile = $this->filterArray($testProfile);
                             $testProfile = implode(" ", $testProfile);
                             $count++;
                             continue;
                         }
-                        $testName = explode("^", $r[3]);
+                        $testName = explode($this->componentSeperator, $r[3]);
                         $testName = $this->filterArray($testName);
                         $testName = array_values($testName);
-
                         $array['resultMarker'] = trim($testName[0]);
                         $array['labMarkerCode'] = trim($testName[0]);
                         $array['testName'] = (!empty($testName[1]) ? trim($testName[1]) : trim($testName[0]));
@@ -122,6 +151,7 @@ class HL7
                         $array['testAbnormal'] = $r[8];
                         $array['profile_name'] = $testProfile;
                         $resultArray[] = $array;
+
                     }
                 }
                 break;
@@ -148,7 +178,8 @@ class HL7
                             $array['testUnit'] = $result->{'OBX.6'}->{'CE.1'}->__toString();
                         }
                         if (!empty($result->{'OBX.7'})) {
-                            $array['testReference'] = explode("^", $result->{'OBX.7'}->__toString());
+                            $array['testReference'] = explode($this->componentSeperator,
+                                $result->{'OBX.7'}->__toString());
                         }
                         if (!empty($result->{'OBX.8'})) {
                             $array['testAbnormal'] = $result->{'OBX.8'}->__toString();
