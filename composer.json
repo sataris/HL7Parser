@@ -1,0 +1,16 @@
+{
+  "name": "sataris/hl7parser",
+  "description": "This package allows you to handle and use HL7 files in PHP",
+  "authors": [
+    {
+      "name": "Aris Abramian",
+      "email": "aris@sataris.com.au"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Sataris\\": "src/"
+    }
+  },
+  "require": {}
+}
